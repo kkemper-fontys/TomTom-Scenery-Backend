@@ -15,11 +15,11 @@ public class PoiController
      @Autowired
      I_UrlBuildService urlBuildService;
      @Autowired
-     I_DataProcessorService dataProcessor;
+     I_DataProcessorService dataProcessorService;
 
-     public PoiController(I_UrlBuildService urlBuildService, I_DataProcessorService dataProcessor) {
+     public PoiController(I_UrlBuildService urlBuildService, I_DataProcessorService dataProcessorService) {
           this.urlBuildService = urlBuildService;
-          this.dataProcessor = dataProcessor;
+          this.dataProcessorService = dataProcessorService;
      }
 
 
@@ -29,7 +29,7 @@ public class PoiController
                                @PathVariable(name = "longitude") double lon)
      {
           urlBuildService.setUrlSearchString(category, lat, lon);
-          return dataProcessor.readDataReturnPoi();
+          return dataProcessorService.readDataReturnPoi();
      }
 
 }
