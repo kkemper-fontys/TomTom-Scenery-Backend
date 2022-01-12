@@ -17,9 +17,10 @@ public class PoiListController
 {
 
      @Autowired
-     I_UrlBuildService urlBuildService;
+     I_DataProcessorService dataProcessorService ;
+
      @Autowired
-     I_DataProcessorService dataProcessorService;
+     I_UrlBuildService urlBuildService;
 
      @Autowired
      I_PoiCollectorService poiCollectorService;
@@ -35,7 +36,7 @@ public class PoiListController
           urlBuildService.setUrlSearchString(category, lat, lon);
           collectionOfPois.clear();
 
-        /*  for(int i = 0; i < urlBuildService.getLimit(); i++)
+          for(int i = 0; i < urlBuildService.getLimit(); i++)
           {
                if(dataProcessorService.getPois() != null)
                {
@@ -43,7 +44,7 @@ public class PoiListController
                     dataProcessorService.setCounter(i);
                }
           }
-          poiCollectorService.setPoiCollection(collectionOfPois);*/
+          poiCollectorService.setPoiCollection(collectionOfPois);
 
 
           return poiCollectorService.getPoiCollection();

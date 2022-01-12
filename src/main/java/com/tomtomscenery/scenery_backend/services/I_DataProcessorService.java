@@ -4,5 +4,7 @@ import com.tomtomscenery.scenery_backend.model.Impl.PoiImpl;
 
 public interface I_DataProcessorService
 {
-     PoiImpl readDataReturnPoi();
+     PoiImpl getPois();
+     void setCounter(int counter);
+     int getCounter();
 }

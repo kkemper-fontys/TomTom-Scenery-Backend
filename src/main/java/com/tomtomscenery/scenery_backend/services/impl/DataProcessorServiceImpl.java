@@ -19,96 +19,87 @@ import java.net.URLConnection;
 @Service
 public class DataProcessorServiceImpl implements I_DataProcessorService
 {
+     private int counter;
+     private final I_UrlBuildService urlBuildService;
 
-          private final I_UrlBuildService urlBuildService;
+     public DataProcessorServiceImpl(I_UrlBuildService urlBuildService) {
+          this.urlBuildService = urlBuildService;
+     }
 
-          public DataProcessorServiceImpl(I_UrlBuildService urlBuildService) {
-               this.urlBuildService = urlBuildService;
+     public int getCounter() {
+          return counter;
+     }
+
+     public void setCounter(int counter) {
+          this.counter = counter;
+     }
+
+
+     @Override
+     public PoiImpl getPois() {
+          try {
+               URL url = getUrl();
+               URLConnection urlConnection = url.openConnection();
+
+               if (((HttpURLConnection) urlConnection).getResponseCode() == 200) {
+
+                    InputStream inputStream = urlConnection.getInputStream();
+                    BufferedReader bufferedReaderObject = new BufferedReader(new InputStreamReader(inputStream));
+                    StringBuilder stringBuilderObject = new StringBuilder();
+
+                    read(bufferedReaderObject, stringBuilderObject);
+                    return getSpecificInformation(stringBuilderObject);
+               }
+          } catch (IOException ioException) {
+               ioException.printStackTrace();
           }
+          return null;
+     }
 
-          @Override
-          public PoiImpl readDataReturnPoi()
+     private PoiImpl getSpecificInformation(StringBuilder stringBuilderObject)
+     {
+          JSONObject jsonObj = new JSONObject(stringBuilderObject.toString());
+          // JSONArray object to navigate to resultsArray.
+          JSONArray resultArrayObj = jsonObj.getJSONArray("results");
+          // JSONObject to navigate to the poi object within de resultsArray at a specific index(counter).
+          JSONObject poi = resultArrayObj.getJSONObject(counter).getJSONObject("poi");
+          // JSONArray object to navigate to categorySetArray within poi object.
+          JSONArray categorySetArray = poi.getJSONArray("categorySet");
+          // JSONObject to navigate to the address object within de resultsArray at a specific index(counter).
+          JSONObject addressPOI = resultArrayObj.getJSONObject(counter).getJSONObject("address");
+          // JSONObject to navigate to the position object within de resultsArray at a specific index(counter).
+          JSONObject positionPoi = resultArrayObj.getJSONObject(counter).getJSONObject("position");
+
+          // If the object at a specific index is not null and the length of the array is smaller than the limit
+          // (limited amount of results)? Set the limit with the length of the array to avoid arrayOutOfBoundExceptions.
+          if (resultArrayObj.getJSONObject(counter) != null && resultArrayObj.length() < urlBuildService.getLimit())
           {
-               try
-               {
-                    URL url = getUrl();
-                    URLConnection urlConnection = url.openConnection();
-
-                    if (((HttpURLConnection) urlConnection).getResponseCode() == 200)
-                    {
-                         InputStream inputStream = urlConnection.getInputStream();
-                         BufferedReader bufferedReaderObject = new BufferedReader(new InputStreamReader(inputStream));
-                         StringBuilder stringBuilderObject = new StringBuilder();
-
-                         readIncomingData(bufferedReaderObject, stringBuilderObject);
-                         return specificPoiInformation(stringBuilderObject);
-                    }
-               }
-               catch (MalformedURLException malformedURLException) {
-                    System.out.println(malformedURLException);
-               }
-               catch (IOException ioException) {
-                    System.out.println(ioException);
-               }
-               return null;
+               urlBuildService.setLimit(resultArrayObj.length());
           }
 
-          // This method retrieves specific information from the incoming data,
-          // stores it, and returns it as a PoiImpl object to the frontend.
-          private PoiImpl specificPoiInformation(StringBuilder stringBuilderObject) {
-
-               // Use the JSONObject that contains the json data.
-               JSONObject jsonObj = new JSONObject(stringBuilderObject.toString());
-
-               // Create a JsonArrayObject from the "results" array called resultArrayObj.
-               JSONArray resultArrayObj = jsonObj.getJSONArray("results");
-               //System.out.println("All the result data: " + resultArrayObj.toString());
-
-               // Create a JSONObject 'poi'. The POI information can be found at index 0 of
-               // the 'results' array. So use the 'poi' object to search the 'results' array.
-               JSONObject poi = resultArrayObj.getJSONObject(0).getJSONObject("poi");
-               //System.out.println("All the POI data from the 'poi' object within the 'results' array : " + poi.toString());
-
-               // Retrieve the String information within the 'poi' JSONObject called 'name'.
-               String namePoi = poi.getString("name");
-               //System.out.println("String data from the nameObject within 'poi': " + namePoi);
-
-               // Retriev the Long  information from the 'id' object from the 'categorySet' array
-               // within the 'poi' object.
-               JSONArray categorySetArray = poi.getJSONArray("categorySet");
-               long categoryIdPoi = categorySetArray.getJSONObject(0).getLong("id");
-               //System.out.println("Long data from the categorySetArray within 'poi': " + categoryIdPoi);
-
-
-               // Then retrieve the String information of the 'freeformAddress' JSONObject
-               // within the 'poi' JSONObject called 'address'.
-               JSONObject addressPOI = resultArrayObj.getJSONObject(0).getJSONObject("address");
-               String addressPoi = addressPOI.getString("freeformAddress");
-               //System.out.println("String data from the 'freeformaddress' object within the 'address object within 'poi': " + addressPoi);
-
-               // within the 'poi' JSONObject called 'address' and retrieve the String information
-               // from the 'localName' object.
-               JSONObject placeNameObject = resultArrayObj.getJSONObject(0).getJSONObject("address");
-               String localNamePoi = addressPOI.getString("localName");
-               //System.out.println("String data from the 'localName' object within the 'address' object within the 'poi' object: " + localNamePoi);
-
-
-               // Retrieve the 'lat' and 'lon' information of type double from the JSONObject called 'position'
-               JSONObject positionPoi = resultArrayObj.getJSONObject(0).getJSONObject("position");
-               double latPoi = positionPoi.getDouble("lat");
-               double lonPoi = positionPoi.getDouble("lon");
-
-               return new PoiImpl(namePoi, categoryIdPoi, addressPoi, localNamePoi, latPoi, lonPoi);
+          if (resultArrayObj.length() == 0)
+          {
+               System.out.println("geen info");
           }
+          String namePoi = poi.getString("name");
+          long categoryIdPoi = categorySetArray.getJSONObject(0).getLong("id");
+          String addressPoi = addressPOI.getString("freeformAddress");
+          String localNamePoi = addressPOI.getString("localName");
+          double latPoi = positionPoi.getDouble("lat");
+          double lonPoi = positionPoi.getDouble("lon");
 
-          private void readIncomingData(BufferedReader bufferedReaderObject, StringBuilder stringBuilderObject) throws IOException {
-               String line;
-               while ((line = bufferedReaderObject.readLine()) != null) {
-                    stringBuilderObject.append(line);
-               }
-          }
+          return new PoiImpl(namePoi, categoryIdPoi, addressPoi, localNamePoi, latPoi, lonPoi);
+     }
 
-          private URL getUrl() throws MalformedURLException {
-               return new URL(urlBuildService.getUrlSearchString());
+
+     private void read(BufferedReader br, StringBuilder sbuilderObj) throws IOException {
+          String line;
+          while ((line = br.readLine()) != null) {
+               sbuilderObj.append(line);
           }
+     }
+
+     private URL getUrl() throws MalformedURLException {
+          return new URL(urlBuildService.getUrlSearchString());
+     }
 }
