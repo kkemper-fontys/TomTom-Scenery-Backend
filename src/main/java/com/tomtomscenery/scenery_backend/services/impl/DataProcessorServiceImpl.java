@@ -25,9 +25,6 @@ public class DataProcessorServiceImpl implements I_DataProcessorService
      private int counter;
      private final I_UrlBuildService urlBuildService;
      private List<PoiImpl> poiCollection;
-//     Logger logger = LoggerFactory.getLogger(DataProcessorServiceImpl.class);
-
-
 
      public DataProcessorServiceImpl(I_UrlBuildService urlBuildService) {
           this.urlBuildService = urlBuildService;
@@ -59,26 +56,23 @@ public class DataProcessorServiceImpl implements I_DataProcessorService
           return new URL(urlBuildService.getUrlSearchString());
      }
 
-
+     // This method checks if the are results, and returns an object with specific information.
      private PoiImpl getSpecificInformation(StringBuilder stringBuilderObject)
      {
-
           JSONObject jsonObj = new JSONObject(stringBuilderObject.toString());
 
           // JSONArray object to navigate to resultsArray.
           JSONArray resultArrayObj = jsonObj.getJSONArray("results");
           if (resultArrayObj.length() == 0)
           {
-               //System.out.println("No content.");
                return null;
           }
           // This method checks if the length of the array is smaller than the limit (limited amount of results).
-          // If the length of the array is smaller than the limit it will set the limit with the length of the
+          // If the length of the array is smaller than the limit it will set the limit to the length of the
           // array to avoid arrayOutOfBoundExceptions.
           if (resultArrayObj.length() < urlBuildService.getLimit())
           {
                urlBuildService.setLimit(resultArrayObj.length());
-               System.out.println("Limit is set to: " + urlBuildService.getLimit());
           }
 
           // JSONObject to navigate to the poi object within de resultsArray at a specific index(counter).
@@ -101,6 +95,7 @@ public class DataProcessorServiceImpl implements I_DataProcessorService
      }
 
 
+     // This method stores the objects with specific information in an arraylist and returns that arraylist.
      @Override
      public List<PoiImpl> getPois() {
           try {
@@ -137,7 +132,4 @@ public class DataProcessorServiceImpl implements I_DataProcessorService
           }
           return null;
      }
-
-
-
 }
