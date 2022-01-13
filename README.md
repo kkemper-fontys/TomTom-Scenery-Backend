@@ -6,4 +6,4 @@ The purpose of the TomTom Scenery Backend application is to return specific info
 - Latitude
 - Longitude
 
-Based on that information the TomTom Scenery Backend application will build a URL that will retrieve all the POI data from the TomTom API, then filters out the specific information and sends that information as an object to the frontend.
+Based on that information the TomTom Scenery Backend application will build a URL that will retrieve all the POI data from the TomTom API. When it has all the information, it extracts the specific information it needs, stores it into objects and sends these objects to the frontend in the form of a List.
