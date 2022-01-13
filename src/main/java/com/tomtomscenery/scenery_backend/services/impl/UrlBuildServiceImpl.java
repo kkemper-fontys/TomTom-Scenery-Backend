@@ -14,7 +14,7 @@ public class UrlBuildServiceImpl implements I_UrlBuildService
      public UrlBuildServiceImpl() {
      }
 
-     // This method gathers all the information from the GET-Request (String category, double lat, double lon),
+     // This method gathers all the information from the GET-Request (String category, double lat, double lon)
      // to form a String (urlSearchString).
      // This String will be used to search for Points Of Interest via the TomTom API.
      @Override
@@ -23,7 +23,7 @@ public class UrlBuildServiceImpl implements I_UrlBuildService
           String baseUrl      = "https://api.tomtom.com/search/2/categorySearch/";
           String key          = "akRRoJXWg8BsEebGgXquaebxtD95DZ2d";
           String lang         = "nl-NL";
-          int radius          = 10000;
+          int radius          = 1000;
           this.urlSearchString = baseUrl + category + ".json?key=" + key + "&language=" + lang + "&lat=" + lat + "&lon=" + lon + "&radius=" + radius + "&limit=" + limit;
      }
 

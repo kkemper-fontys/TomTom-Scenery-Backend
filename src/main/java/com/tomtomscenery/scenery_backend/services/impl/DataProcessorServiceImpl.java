@@ -4,6 +4,7 @@ import com.tomtomscenery.scenery_backend.model.Impl.PoiImpl;
 import com.tomtomscenery.scenery_backend.services.I_DataProcessorService;
 import com.tomtomscenery.scenery_backend.services.I_UrlBuildService;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
@@ -15,15 +16,25 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class DataProcessorServiceImpl implements I_DataProcessorService
 {
      private int counter;
      private final I_UrlBuildService urlBuildService;
+     private List<PoiImpl> poiCollection;
+//     Logger logger = LoggerFactory.getLogger(DataProcessorServiceImpl.class);
+
+
 
      public DataProcessorServiceImpl(I_UrlBuildService urlBuildService) {
           this.urlBuildService = urlBuildService;
+     }
+
+     public void setPoiCollection(List<PoiImpl> poiCollection) {
+          this.poiCollection = poiCollection;
      }
 
      public int getCounter() {
@@ -35,32 +46,41 @@ public class DataProcessorServiceImpl implements I_DataProcessorService
      }
 
 
-     @Override
-     public PoiImpl getPois() {
-          try {
-               URL url = getUrl();
-               URLConnection urlConnection = url.openConnection();
-
-               if (((HttpURLConnection) urlConnection).getResponseCode() == 200) {
-
-                    InputStream inputStream = urlConnection.getInputStream();
-                    BufferedReader bufferedReaderObject = new BufferedReader(new InputStreamReader(inputStream));
-                    StringBuilder stringBuilderObject = new StringBuilder();
-
-                    read(bufferedReaderObject, stringBuilderObject);
-                    return getSpecificInformation(stringBuilderObject);
-               }
-          } catch (IOException ioException) {
-               ioException.printStackTrace();
+     // Read incoming data and store it into the StringBuilder object.
+     private void read(BufferedReader br, StringBuilder sbuilderObj) throws IOException {
+          String line;
+          while ((line = br.readLine()) != null) {
+               sbuilderObj.append(line);
           }
-          return null;
      }
+
+     // Create an URL using the UrlSearchString from the UrlBuildService class.
+     private URL getUrl() throws MalformedURLException {
+          return new URL(urlBuildService.getUrlSearchString());
+     }
+
 
      private PoiImpl getSpecificInformation(StringBuilder stringBuilderObject)
      {
+
           JSONObject jsonObj = new JSONObject(stringBuilderObject.toString());
+
           // JSONArray object to navigate to resultsArray.
           JSONArray resultArrayObj = jsonObj.getJSONArray("results");
+          if (resultArrayObj.length() == 0)
+          {
+               //System.out.println("No content.");
+               return null;
+          }
+          // This method checks if the length of the array is smaller than the limit (limited amount of results).
+          // If the length of the array is smaller than the limit it will set the limit with the length of the
+          // array to avoid arrayOutOfBoundExceptions.
+          if (resultArrayObj.length() < urlBuildService.getLimit())
+          {
+               urlBuildService.setLimit(resultArrayObj.length());
+               System.out.println("Limit is set to: " + urlBuildService.getLimit());
+          }
+
           // JSONObject to navigate to the poi object within de resultsArray at a specific index(counter).
           JSONObject poi = resultArrayObj.getJSONObject(counter).getJSONObject("poi");
           // JSONArray object to navigate to categorySetArray within poi object.
@@ -70,17 +90,6 @@ public class DataProcessorServiceImpl implements I_DataProcessorService
           // JSONObject to navigate to the position object within de resultsArray at a specific index(counter).
           JSONObject positionPoi = resultArrayObj.getJSONObject(counter).getJSONObject("position");
 
-          // If the object at a specific index is not null and the length of the array is smaller than the limit
-          // (limited amount of results)? Set the limit with the length of the array to avoid arrayOutOfBoundExceptions.
-          if (resultArrayObj.getJSONObject(counter) != null && resultArrayObj.length() < urlBuildService.getLimit())
-          {
-               urlBuildService.setLimit(resultArrayObj.length());
-          }
-
-          if (resultArrayObj.length() == 0)
-          {
-               System.out.println("geen info");
-          }
           String namePoi = poi.getString("name");
           long categoryIdPoi = categorySetArray.getJSONObject(0).getLong("id");
           String addressPoi = addressPOI.getString("freeformAddress");
@@ -92,14 +101,43 @@ public class DataProcessorServiceImpl implements I_DataProcessorService
      }
 
 
-     private void read(BufferedReader br, StringBuilder sbuilderObj) throws IOException {
-          String line;
-          while ((line = br.readLine()) != null) {
-               sbuilderObj.append(line);
+     @Override
+     public List<PoiImpl> getPois() {
+          try {
+               URL url = getUrl();
+               URLConnection urlConnection = url.openConnection();
+               List<PoiImpl> listOfPois = new ArrayList<>();
+
+               if (((HttpURLConnection) urlConnection).getResponseCode() == 200) {
+
+                    InputStream inputStream = urlConnection.getInputStream();
+                    BufferedReader bufferedReaderObject = new BufferedReader(new InputStreamReader(inputStream));
+                    StringBuilder stringBuilderObject = new StringBuilder();
+
+                    read(bufferedReaderObject, stringBuilderObject);
+                    for(int i = 0; i < urlBuildService.getLimit(); i++)
+                    {
+                         if(getSpecificInformation(stringBuilderObject) == null)
+                         {
+                              return null;
+                         }
+                         else
+                         {
+                              getSpecificInformation(stringBuilderObject);
+                              listOfPois.add(getSpecificInformation(stringBuilderObject));
+                              setCounter(i);
+                         }
+                    }
+                    setPoiCollection(listOfPois);
+                    return poiCollection;
+               }
           }
+          catch (IOException | JSONException exception) {
+               String message = exception.getMessage();
+          }
+          return null;
      }
 
-     private URL getUrl() throws MalformedURLException {
-          return new URL(urlBuildService.getUrlSearchString());
-     }
+
+
 }
